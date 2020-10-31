@@ -4,7 +4,8 @@
   "description": "Chat server for Open360",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node main.js"
   },
   "repository": {
     "type": "git",
@@ -20,6 +21,8 @@
   },
   "homepage": "https://github.com/Pabzzy-Mobile/Open360-Chat-Server#readme",
   "dependencies": {
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "redis": "^3.0.2",
+    "socket.io": "^2.3.0"
   }
 }

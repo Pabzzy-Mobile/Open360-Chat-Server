@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  chat-server:
+    build: .
+    container_name: open-360-chat-server
+    restart: on-failure
+    links:
+      - socket-redis
+    environment:
+      - PORT=4002
+    ports:
+      - "4002:4002"
+    networks:
+      chat-network:
+      socket-network:
+
+  socket-redis:
+    image: redis
+    container_name: open360-redis-socket
+    hostname: open360-redis-socket
+    volumes:
+      - "/usr/src/open360/socket_data:/data"
+      - "/usr/src/open360/redis.conf:/usr/local/etc/redis/redis.conf"
+    networks:
+      socket-network:
+
+networks:
+  chat-network:
+  socket-network:
