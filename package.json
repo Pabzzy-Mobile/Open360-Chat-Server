@@ -1,0 +1,25 @@
+{
+  "name": "open360-chat-server",
+  "version": "0.1.0",
+  "description": "Chat server for Open360",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pabzzy-Mobile/Open360-Chat-Server.git"
+  },
+  "keywords": [
+    "Node.js"
+  ],
+  "author": "Pedro Pires",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Pabzzy-Mobile/Open360-Chat-Server/issues"
+  },
+  "homepage": "https://github.com/Pabzzy-Mobile/Open360-Chat-Server#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
