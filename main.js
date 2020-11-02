@@ -26,7 +26,11 @@ io.use((socket, next) => {
 
     // Register the socket to the database along with the room the socket is trying to join
     RedisClient.set(socket.id + "room", handshakeData._query['channel'] || 'universal');
-    RedisClient.set(socket.id + "user", handshakeData._query['user']);
+    if (handshakeData._query['user'] == ""){
+        RedisClient.set(socket.id + "user", false);
+    } else {
+        RedisClient.set(socket.id + "user", handshakeData._query['user']);
+    }
 
     next();
 });
@@ -45,6 +49,9 @@ io.on('connection', (socket) => {
         if (data.message === "") return;
         // Get the username
         RedisClient.get(socket.id + "user", (err, reply) => {
+            if (reply === "false" || reply === false){
+                return false;
+            }
             // Add the username to the data object
             data.user = reply;
             RedisClient.get(socket.id + "room", (err, reply) => {
