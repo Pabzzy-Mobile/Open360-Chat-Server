@@ -26,10 +26,11 @@ io.use((socket, next) => {
 
     // Register the socket to the database along with the room the socket is trying to join
     RedisClient.set(socket.id + "room", handshakeData._query['channel'] || 'universal');
-    if (handshakeData._query['user'] == ""){
+    let username = handshakeData._query['user'];
+    if (username == ""){
         RedisClient.set(socket.id + "user", false);
     } else {
-        RedisClient.set(socket.id + "user", handshakeData._query['user']);
+        RedisClient.set(socket.id + "user", username);
     }
 
     next();
@@ -43,20 +44,23 @@ io.on('connection', (socket) => {
         socket.join(reply);
     });
 
+    // TODO: Require some kind of chat session token to verify the user
+    //socket.emit('require-info', (data));
+
     // Retransmit chat messages from the sockets
     socket.on('chat-message', (data) => {
         // Check if the message is empty
         if (data.message === "") return;
         // Get the username
-        RedisClient.get(socket.id + "user", (err, reply) => {
-            if (reply === "false" || reply === false){
+        RedisClient.get(socket.id + "user", (err, username) => {
+            if (username === "false" || username === false){
                 return false;
             }
             // Add the username to the data object
-            data.user = reply;
-            RedisClient.get(socket.id + "room", (err, reply) => {
+            data.user = username;
+            RedisClient.get(socket.id + "room", (err, roomname) => {
                 // Send the data to the socket
-                io.to(reply).emit("chat-message", data);
+                io.to(roomname).emit("chat-message", data);
             });
         });
     });
