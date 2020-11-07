@@ -32,8 +32,10 @@ io.use((socket, next) => {
     let username = handshakeData._query['user'];
     if (username == ""){
         RedisClient.set(socket.id + "user", false);
+        RedisClient.set(socket.id + "colour", false);
     } else {
         RedisClient.set(socket.id + "user", username);
+        RedisClient.set(socket.id + "colour", Util.randomColour());
     }
 
     next();
@@ -59,13 +61,17 @@ io.on('connection', (socket) => {
             if (username === "false" || username === false){
                 return false;
             }
-            // Make the message safe
-            data.message = Util.sanitize(data.message);
-            // Add the username to the data object
-            data.user = username;
-            RedisClient.get(socket.id + "room", (err, roomname) => {
-                // Send the data to the socket
-                io.to(roomname).emit("chat-message", data);
+            // Get the colour
+            RedisClient.get(socket.id + "colour", (err, colour) => {
+                // Make the message safe
+                data.message = Util.sanitize(data.message);
+                // Add the username and colour to the data object
+                data.user = username;
+                data.colour = colour;
+                RedisClient.get(socket.id + "room", (err, roomname) => {
+                    // Send the data to the socket
+                    io.to(roomname).emit("chat-message", data);
+                });
             });
         });
     });
