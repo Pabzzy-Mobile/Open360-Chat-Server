@@ -10,6 +10,9 @@ RedisClient.on("error", function(error) {
     console.error(error);
 });
 
+// Require our core modules
+const {Util} = require("./core/");
+
 // Tell the server what port it should use. 4002 is for testing purposes
 const PORT = parseInt(process.env.PORT) || 4002;
 
@@ -56,6 +59,8 @@ io.on('connection', (socket) => {
             if (username === "false" || username === false){
                 return false;
             }
+            // Make the message safe
+            data.message = Util.sanitize(data.message);
             // Add the username to the data object
             data.user = username;
             RedisClient.get(socket.id + "room", (err, roomname) => {
