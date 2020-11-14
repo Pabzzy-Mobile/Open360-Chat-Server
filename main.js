@@ -1,3 +1,4 @@
+const http = require('http').createServer();
 const redis = require('redis');
 // Create the database client
 let RedisClient = redis.createClient({
@@ -17,11 +18,17 @@ const {Util} = require("./core/");
 const PORT = parseInt(process.env.PORT) || 4002;
 
 // Start the socket server
-const io = require('socket.io').listen(PORT);
-
-// Allow cross origin requests
-// This allows for third party clients for the chat
-io.origins('*:*');
+const {Server, Socket} = require('socket.io');
+const io = new Server(http, {
+    // Allow cross origin requests
+    // This allows for third party clients for the chat
+    cors: {
+        // The `*` is used as the wildcard here.
+        origin: "*",
+        methods: ["GET", "POST"],
+        allowedHeaders: ["content-type"]
+    }
+});
 
 // Require some data over the connections start
 io.use((socket, next) => {
@@ -82,4 +89,8 @@ io.on('connection', (socket) => {
         RedisClient.set(socket.id + "room", false);
         RedisClient.set(socket.id + "user", false);
     });
+});
+
+http.listen(PORT, function () {
+    console.log("Listening on *:", PORT);
 });
