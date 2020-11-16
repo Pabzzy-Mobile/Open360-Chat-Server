@@ -11,9 +11,17 @@ services:
       - PORT=4002
     ports:
       - "4002:4002"
+    #DEBUG VARIABLES
+    #  - "9229:9229"
+    #command:
+    #  - node
+    #  - "--inspect-brk=0.0.0.0"
+    #  - "main.js"
+    #END OF DEBUG
     networks:
       chat-network:
       socket-network:
+      api-network:
 
   socket-redis:
     image: redis
@@ -30,3 +38,6 @@ networks:
   chat-network:
     external: true
     name: "open360-chat-network"
+  api-network:
+    external: true
+    name: "open360-api-network"

@@ -12,7 +12,7 @@ RedisClient.on("error", function(error) {
 });
 
 // Require our core modules
-const {Util} = require("./core/");
+const {Util, API} = require("./core/");
 
 // Tell the server what port it should use. 4002 is for testing purposes
 const PORT = parseInt(process.env.PORT) || 4002;
@@ -34,25 +34,58 @@ const io = new Server(http, {
 io.use((socket, next) => {
     let handshakeData = socket.request;
 
-    // Register the socket to the database along with the room the socket is trying to join
-    RedisClient.set(socket.id + "room", handshakeData._query['channel'] || 'universal');
+    let room = (handshakeData._query['channel'] || 'universal');
     let username = handshakeData._query['user'];
+
+    let socketUserKey = Util.getUserKey(socket);
+    let socketColourKey = Util.getColourKey(socket);
+    let socketRoomKey = Util.getRoomKey(socket);
+
+    // Register the socket to the database along with the room the socket is trying to join
+    RedisClient.set(socketRoomKey, room);
+
     if (username == ""){
-        RedisClient.set(socket.id + "user", false);
-        RedisClient.set(socket.id + "colour", false);
+        RedisClient.set(socketUserKey, false);
+        RedisClient.set(socketColourKey, false);
     } else {
-        RedisClient.set(socket.id + "user", username);
-        RedisClient.set(socket.id + "colour", Util.randomColour());
+        RedisClient.set(socketUserKey, username);
+        RedisClient.set(socketColourKey, Util.randomColour());
     }
+
+    next();
+});
+
+// Count the chat members
+io.use((socket, next) => {
+    let handshakeData = socket.request;
+
+    let room = (handshakeData._query['channel'] || 'universal');
+    let username = handshakeData._query['user'];
+
+    if (username == ""){
+        next();
+        return;
+    }
+
+    Util.addMemberToRoom(RedisClient, room, username);
+
+    RedisClient.get(Util.getRoomCountKey(room), (err, count) => {
+        if (err) console.error(err);
+        console.log(room, ":", count);
+    });
 
     next();
 });
 
 // On socket connection
 io.on('connection', (socket) => {
+    let socketUserKey = Util.getUserKey(socket);
+    let socketColourKey = Util.getColourKey(socket);
+    let socketRoomKey = Util.getRoomKey(socket);
+
     //console.log("New connection on: " + socket.id);
     // Get the room the socket is supposed to be in and add it to the room
-    RedisClient.get(socket.id + "room", (err, reply) => {
+    RedisClient.get(socketRoomKey, (err, reply) => {
         socket.join(reply);
     });
 
@@ -64,18 +97,18 @@ io.on('connection', (socket) => {
         // Check if the message is empty
         if (data.message === "") return;
         // Get the username
-        RedisClient.get(socket.id + "user", (err, username) => {
+        RedisClient.get(socketUserKey, (err, username) => {
             if (username === "false" || username === false){
                 return false;
             }
             // Get the colour
-            RedisClient.get(socket.id + "colour", (err, colour) => {
+            RedisClient.get(socketColourKey, (err, colour) => {
                 // Make the message safe
                 data.message = Util.sanitize(data.message);
                 // Add the username and colour to the data object
                 data.user = username;
                 data.colour = colour;
-                RedisClient.get(socket.id + "room", (err, roomname) => {
+                RedisClient.get(socketRoomKey, (err, roomname) => {
                     // Send the data to the socket
                     io.to(roomname).emit("chat-message", data);
                 });
@@ -86,11 +119,52 @@ io.on('connection', (socket) => {
     // On disconnect delete the socket from the database
     socket.on('disconnect', () => {
         //console.log(socket.id + " disconnected");
-        RedisClient.set(socket.id + "room", false);
-        RedisClient.set(socket.id + "user", false);
+        RedisClient.get(socketUserKey, (err, username) => {
+            RedisClient.get(socketRoomKey, (err, roomname) => {
+                Util.removeMemberFromRoom(RedisClient, roomname, username);
+                RedisClient.set(Util.getUserKey(socket), false);
+                RedisClient.set(Util.getColourKey(socket), false);
+            });
+        });
     });
 });
 
 http.listen(PORT, function () {
     console.log("Listening on *:", PORT);
 });
+
+// CONNECT TO THE INTERNAL API
+
+// Socket for connecting to the internal API
+const internalIo = require("socket.io-client");
+
+const internalSocket = internalIo("ws://open-360-api-sock:4000", {
+    reconnectionDelayMax: 10000,
+    query: {
+        name: "open360:chat-api-server"
+    }
+});
+
+internalSocket.on("connect", function (){
+    console.log("Connected to Internal API");
+    internalSocket.emit("log",{log:"Connected to Internal API", type:"info"});
+});
+
+internalSocket.on("chat-api", (data) => {
+    if (data.type == "question"){
+        switch (data.package.prompt){
+            case "roomStats":
+                API.chat.handleRoomStatsRequest(RedisClient, internalSocket, data);
+                break;
+        }
+    }
+    if (data.type == "message"){
+        //switch (data.package.prompt){
+        //    case "setOnline":
+        //        API.channel.handleSetChannelOnline(socket, data);
+        //        break;
+        //}
+    }
+});
+
+// ------ END OF INTERNAL API RESPONSES
