@@ -156,14 +156,14 @@ internalSocket.on("chat-api", (data) => {
             case "roomStats":
                 API.chat.handleRoomStatsRequest(RedisClient, internalSocket, data);
                 break;
+            case "status":
+                internalSocket.emit("api-message", {target: data.ack, ack: "chat-api",type: "message", package: {prompt: "status-reply", status: "alive"}});
+                break;
         }
     }
     if (data.type == "message"){
-        //switch (data.package.prompt){
-        //    case "setOnline":
-        //        API.channel.handleSetChannelOnline(socket, data);
-        //        break;
-        //}
+        switch (data.package.prompt){
+        }
     }
 });
 
