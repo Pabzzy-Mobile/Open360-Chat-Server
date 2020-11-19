@@ -157,7 +157,15 @@ internalSocket.on("chat-api", (data) => {
                 API.chat.handleRoomStatsRequest(RedisClient, internalSocket, data);
                 break;
             case "status":
-                internalSocket.emit("api-message", {target: data.ack, ack: "chat-api",type: "message", package: {prompt: "status-reply", status: "alive"}});
+                internalSocket.emit("api-message", {
+                    target: data.ack,
+                    ack: "chat-api",
+                    type: "message",
+                    package: {
+                        prompt: "status-reply",
+                        status: "alive"
+                    }
+                });
                 break;
         }
     }
