@@ -18,6 +18,43 @@ function handleRoomStatsRequest(redisClient, socket, data){
     });
 }
 
+function sendViewerIncrement(socket, username, increment = true) {
+    if(socket)
+        socket.emit("api-message", {
+            target: "web-api",
+            ack: "chat-api",
+            type: "message",
+            package: {
+                prompt: "incrementViewers",
+                data: {
+                    username: username,
+                    amount: 1,
+                    increment: true
+                }
+            }
+        });
+}
+
+function sendViewerCount(socket, username, count) {
+    if(socket) {
+        socket.emit("api-message", {
+            target: "web-api",
+            ack: "chat-api",
+            type: "message",
+            package: {
+                prompt: "setViewerCount",
+                data: {
+                    username: username,
+                    count: count
+                },
+                message: "View Count Update Request"
+            }
+        });
+    }
+}
+
 module.exports = {
-    handleRoomStatsRequest: handleRoomStatsRequest
+    handleRoomStatsRequest: handleRoomStatsRequest,
+    sendViewerIncrement: sendViewerIncrement,
+    sendViewerCount: sendViewerCount
 }

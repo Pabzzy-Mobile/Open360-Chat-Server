@@ -28,7 +28,8 @@ services:
     container_name: open360-redis-socket
     hostname: open360-redis-socket
     volumes:
-      - "/usr/src/open360/socket_data:/data"
+      # Uncomment this line for permanent storage
+      #- "/usr/src/open360/socket_data:/data"
       - "/usr/src/open360/redis.conf:/usr/local/etc/redis/redis.conf"
     networks:
       socket-network:

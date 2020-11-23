@@ -77,6 +77,26 @@ io.use((socket, next) => {
     next();
 });
 
+// Send the count to the server
+io.use((socket, next) => {
+    let handshakeData = socket.request;
+
+    let room = handshakeData._query['channel'];
+    let username = handshakeData._query['user'];
+
+    if (room == ""){
+        next();
+        return;
+    }
+
+    // Send a message to the web server with the viewer count
+    RedisClient.get(Util.getRoomCountKey(room), (err, memberCount) => {
+        API.chat.sendViewerCount(internalSocket, room, memberCount);
+    });
+
+    next();
+});
+
 // On socket connection
 io.on('connection', (socket) => {
     let socketUserKey = Util.getUserKey(socket);
@@ -124,6 +144,10 @@ io.on('connection', (socket) => {
                 Util.removeMemberFromRoom(RedisClient, roomname, username);
                 RedisClient.set(Util.getUserKey(socket), false);
                 RedisClient.set(Util.getColourKey(socket), false);
+                // Send a message to the web server with the decreased viewer count
+                RedisClient.get(Util.getRoomCountKey(roomname), (err, memberCount) => {
+                    API.chat.sendViewerCount(internalSocket, roomname, memberCount);
+                });
             });
         });
     });
